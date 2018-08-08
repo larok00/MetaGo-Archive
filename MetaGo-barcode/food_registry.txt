@@ -1,0 +1,27 @@
+{
+    "51000001":
+    {
+        "name": "Ready salted crisps - Walkers",
+        "price": "0.50"
+    },
+    "51000009":
+    {
+        "name": "Salt and vinegar - Walkers",
+        "price": "0.50"
+    },
+    "51000012":
+    {
+        "name": "Prawn cocktail crisps - Walkers",
+        "price": "0.50"
+    },
+    "5000328698823":
+    {
+        "name": "Cheese and onion - Walkers",
+        "price": "0.50"
+    },
+    "5000328347790":
+    {
+        "name": "Ready salted - Walkers",
+        "price": "0.50"
+    }
+}
