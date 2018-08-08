@@ -89,4 +89,28 @@
         "price": "0.55",
         "weight": "35"
     },
+    "7613034959638":
+    {
+        "name": "Drifter",
+        "price": "0.55",
+        "weight": "48"
+    },
+    "7622300743536":
+    {
+        "name": "Cadbury Dairy Milk",
+        "price": "0.55",
+        "weight": "45"
+    },
+    "7622300743659":
+    {
+        "name": "Cadbury Dairy Milk - Fruit and Nut",
+        "price": "0.55",
+        "weight": "49"
+    },
+    "7613034872593":
+    {
+        "name": "Yorkie - Raisin and Biscuit",
+        "price": "0.55",
+        "weight": "44"
+    }
 }
