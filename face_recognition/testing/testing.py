@@ -1,7 +1,7 @@
 import face_recognition
 import os
 
-# Create list with all file pathsi
+# Create list with all file paths
 unknown_images_path = os.path.join(os.getcwd(), "unknown_images")
 known_images_path = os.path.join(os.getcwd(), "known_images")
 
