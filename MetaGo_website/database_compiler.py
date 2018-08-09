@@ -1,10 +1,13 @@
 
-from MetaGo.models import Employee
 import face_recognition
 import pickle
+import django
 import os
-import yaml
 
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "MetaGo_website.settings")
+django.setup()
+from MetaGo.models import Employee
 
 HOST_KEY="HOST"
 USER_KEY="USER"
@@ -14,6 +17,7 @@ DATBASE_KEY="DATABASE"
 ID_KEY="ID"
 ENCODING_KEY="ENCODING"
 root_directory=os.getcwd()
+PERSONEL_INFO_FILE_NAME="data_dictionary.pkl"
 known_images_path = os.path.join(os.getcwd(), "known_images")
 
 
@@ -25,7 +29,8 @@ class Person:
         self.last=last
         self.encoding=encoding
 
-
+def load_personel_data():
+    return pickle.load(open(PERSONEL_INFO_FILE_NAME))
 
 def collect_filepaths():
     global known_images_path
@@ -55,6 +60,7 @@ def populate_database(known_images):
     print(person)
 
 if __name__=="__main__":
+    print(load_personel_data)
     known_images=collect_filepaths()
     populate_database(known_images)
 
