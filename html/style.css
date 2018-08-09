@@ -1,0 +1,28 @@
+html, body {
+	height: 100%;
+	font-size: 30pt;
+
+}
+.container {
+	background-color: #96b5e8;
+	height: 100%;
+	padding: 10pt;
+}
+
+.page {
+	padding: 20pt auto;
+}
+
+div {
+	
+}
+
+button {
+	margin-top:10pt;
+	margin-bottom:10pt;
+}
+
+.text-big {
+	text-align: center;
+	font-size: 40pt;
+}
