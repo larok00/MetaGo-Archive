@@ -18,3 +18,10 @@ Example use (both lines do the same thing):
 print(barcode_to_product_dict(barcode="51000001")["name"])
 print(barcode_to_product_name(barcode="51000001"))
 """
+
+"""
+def update(barcode=None, initials=None):
+    price = barcode_to_product_dict(barcode=barcode)["price"]
+    bal = get_balance(person_id=person_id)
+    change_bal(person_id=person_id, person_balance=bal+price)
+"""
