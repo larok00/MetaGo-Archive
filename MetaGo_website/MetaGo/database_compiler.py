@@ -4,9 +4,10 @@ import pickle
 import django
 import os
 
-
+os.chdir("..")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "MetaGo_website.settings")
 django.setup()
+os.chdir("MetaGo")
 from MetaGo.models import Employee
 
 HOST_KEY="HOST"
