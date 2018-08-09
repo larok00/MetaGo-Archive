@@ -9,6 +9,7 @@ gunicorn = "*"
 django-heroku = "*"
 whitenoise = "*"
 "psycopg2-binary" = "*"
+numpy = "*"
 
 [dev-packages]
 
