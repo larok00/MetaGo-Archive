@@ -11,6 +11,7 @@
 
   <script src="tracking/build/tracking-min.js"></script>
   <script src="tracking/build/data/face-min.js"></script>
+  <script src="quagga.min.js"></script>
 
 
   <style>
@@ -41,7 +42,7 @@
         <canvas id="canvas" width="320" height="240"></canvas>
       </div>
       
-        <button type="button" class="button" class="col-8" id="cameraframe-cancel">Cancel</button>
+        <button type="button" class="button" class="col-8" id="idcamera-cancel">Cancel</button>
       
     </div>
 
@@ -52,28 +53,33 @@
     </div>
 
     <div id="page-cameramany" class="page">
-       <div class="text-big">Who are you?<b id="found-name"></b>.</span>
-       Need to generate these-----><div class="row"><button type="button" class="col-3" class="button">Use initials</button>
-       <button type="button" class="col-8" class="button">None of these :(</button>
+       <div class="text-big">Who are you?<b id="found-name"></b>.</div>
+       <div id="cameramany-possibles"></div>
+       <button type="button" class="col-8" class="button" id="cameramany-none">None of these :(</button>
     </div>    
 
     <div id="page-camerafail" class="page">
-       <div class="text-big">FaceID failed.</span>
+       <div class="text-big">FaceID failed.</div>
        <button type="button" class="col-8" class="button" id="camerafail-retry">Retry</button>
        <button type="button" class="col-8" class="button" id="camerafail-initials">Use initials</button>
     </div>
 
     <div id="page-initials" class="page">
-      <div class="text-small">Please enter your initials.</span>
+      <div class="text-small">Please enter your initials.</div>
       <input type="text" id="initials-text">
       <button type="button" class="col-8" class="button" id="camerafail-initials">Go</button>
     </div>
 
     <div id="page-initialsfail" class="page">
-      <div class="text-small">Initials not recognised.</span>
+      <div class="text-small">Initials not recognised.</div>
       <button type="button" class="col-8" class="button" id="initialsfail-retry">Retry</button>
       <button type="button" class="col-8" class="button" id="initialsfail-cancel">Cancel</button>
+    </div>
 
+    <div id="page-barcode" class="page">
+      <div id="scanner-container"></div>
+      <button type="button" class="col-8" class="button" id="barcode-manual">Select manually.</button>
+      <button type="button" class="col-8" class="button" id="barcode-cancel">Cancel</button>
     </div>
 
 
@@ -91,8 +97,7 @@
 
 
       //Var setup
-      var scale = 0.25;
-      var photoSent = false;
+
 
       var goHome = function() {
         $(".page").hide();
@@ -106,17 +111,20 @@
       }
 
       var goFaceid = function() {
+        var scale = 0.25;
+        var photoSent = false;
+
         $(".page").hide();
         $("#page-idcamera").show();
 
-        photoSent = false;
-
+        $("#idcamera-cancel").click(function(){
+          setTimeout(function () { trackerTask.stop(); video.pause(); video.srcObject.getVideoTracks()[0].stop(); }, 1);
+          goHome();
+        });
 
         var video = document.getElementById('video');
         var canvas = document.getElementById('canvas');
         var context = canvas.getContext('2d');
-      
-        
       
         var tracker = new tracking.ObjectTracker('face');
         tracker.setInitialScale(4);
@@ -160,10 +168,22 @@
                   imgBase64: dataURL
                 }
               }).done(function(msg) {
-                console.log(msg); 
+                users = JSON.parse(msg);
+                console.log("Got the following from server:");
+                console.log(users);
+                if (users.length == 0){
+                  goCamerafail();
+                }
+                else if (users.length == 1) {
+                  goCameraone(users);
+                }
+                else {
+                  goCameramany(users);
+                }
+                
               });            
             }
-              //trackerTask.stop();
+              
               
           });
         });
@@ -171,6 +191,125 @@
         trackerTask = tracking.track('#video', tracker, { camera: true });
       };
 
+      var goCamerafail = function() {
+        $(".page").hide();
+        $("#page-camerafail").show();
+      }
+
+      var goCameraone = function(users) {
+        $(".page").hide();
+        $("#page-cameraone").show();
+        console.log(users)
+        $("#found-name").text(users[0]);
+      }
+
+      var goCameramany = function(users) {
+        $(".page").hide();
+        $("#page-cameramany").show();
+
+        var ii;
+        for (ii = 0; ii < users.length; ii++){
+          console.log("Adding user: "+ users[ii]);
+          $("#cameramany-possibles").append("<button type=\"button\" class=\"col-8 button possibles-button\" id=\"" + users[ii] +"\">"+users[ii]+"</button>");
+        }
+
+        $(".possibles-button").click(function(){
+          customer = this.id;
+          console.log("Logging in customer "+ customer)
+          goBarcode(customer);
+        });
+        $("#cameramany-none").click(function(){
+          goInitials();
+        });
+        };
+
+      var goBarcode = function(customer){
+        $(".page").hide();
+        $("#page-barcode").show(); 
+        startScanner(); 
+      }
+
+        function startScanner() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#scanner-container'),
+                    constraints: {
+                        width: 480,
+                        height: 320,
+                        facingMode: "environment"
+                    },
+                },
+                decoder: {
+                    readers: [
+                        "code_128_reader",
+                        "ean_reader",
+                        "ean_8_reader",
+                        "code_39_reader",
+                        "code_39_vin_reader",
+                        "codabar_reader",
+                        "upc_reader",
+                        "upc_e_reader",
+                        "i2of5_reader"
+                    ],
+                    debug: {
+                        showCanvas: true,
+                        showPatches: true,
+                        showFoundPatches: true,
+                        showSkeleton: true,
+                        showLabels: true,
+                        showPatchLabels: true,
+                        showRemainingPatchLabels: true,
+                        boxFromPatches: {
+                            showTransformed: true,
+                            showTransformedBox: true,
+                            showBB: true
+                        }
+                    }
+                },
+
+            }, function (err) {
+                if (err) {
+                    console.log(err);
+                    return
+                }
+
+                console.log("Initialization finished. Ready to start");
+                Quagga.start();
+
+            });
+
+            Quagga.onProcessed(function (result) {
+                var drawingCtx = Quagga.canvas.ctx.overlay,
+                drawingCanvas = Quagga.canvas.dom.overlay;
+
+                if (result) {
+                    if (result.boxes) {
+                        drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                        result.boxes.filter(function (box) {
+                            return box !== result.box;
+                        }).forEach(function (box) {
+                            Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                        });
+                    }
+
+                    if (result.box) {
+                        Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+                    }
+
+                    if (result.codeResult && result.codeResult.code) {
+                        Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                    }
+                }
+            });
+
+
+            Quagga.onDetected(function (result) {
+                console.log("Barcode detected and processed : [" + result.codeResult.code + "]", result);
+                Quagga.stop();
+            });
+        }
 
       goHome();
 
