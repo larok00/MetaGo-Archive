@@ -1,20 +1,22 @@
+{% load static %}
+
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>tracking.js - face with camera</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="{% static 'MetaGo/style.css' %}">
 
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
 
 
-  <script src="tracking/build/tracking-min.js"></script>
-  <script src="tracking/build/data/face-min.js"></script>
-  <script src="quagga.min.js"></script>
+  <script src="{% static 'MetaGo/tracking/build/tracking-min.js' %}"></script>
+  <script src="{% static 'MetaGo/tracking/build/data/face-min.js' %}"></script>
+  <script src="{% static 'MetaGo/quagga.min.js' %}"></script>
 
 
-  <style>
+   <style>
   video, canvas {
     margin-left: 230px;
     margin-top: 120px;
@@ -97,11 +99,13 @@
 
 
       //Var setup
-
+      var basket = new Array();
+      var customer;
 
       var goHome = function() {
         $(".page").hide();
         $("#page-home").show();
+        customer = null;
         $("#home-faceid").click(function(){
           goFaceid();
         });
@@ -165,7 +169,7 @@
                 type: "POST",
                 url: "photoid.txt",
                 data: {
-                  imgBase64: dataURL
+                  img: dataURL
                 }
               }).done(function(msg) {
                 users = JSON.parse(msg);
@@ -223,10 +227,18 @@
         });
         };
 
-      var goBarcode = function(customer){
+      var goBarcode = function(){
         $(".page").hide();
-        $("#page-barcode").show(); 
+        $("#page-barcode").show();
         startScanner(); 
+        $("#barcode-manual").click(function(){
+          Quagga.stop();
+          goSelectmanual();
+        });
+        $("#barcode-cancel").click(function(){
+          Quagga.stop();
+          goHome();
+        });
       }
 
         function startScanner() {
@@ -308,6 +320,24 @@
             Quagga.onDetected(function (result) {
                 console.log("Barcode detected and processed : [" + result.codeResult.code + "]", result);
                 Quagga.stop();
+                $.ajax({
+                  type: "POST",
+                  url: "barcode.txt",
+                  data: {
+                    barcode: result.codeResult.code
+                  }
+                }).done(function(msg) {
+                  product = JSON.parse(msg);
+                  if (product.failed == 1){
+                    console.log('lookup failed')
+                    goBarcodefailed()
+                  }
+                  else {
+                    basket.push(product);
+                  }
+
+                });
+
             });
         }
 
