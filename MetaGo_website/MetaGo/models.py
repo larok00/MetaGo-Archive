@@ -7,7 +7,7 @@ class Employee(models.Model):
     face_encoding = postgres_fields.ArrayField(models.FloatField(null=True, blank=True), size=128, null=True, blank=True)
     first_name = models.CharField(max_length=100, null=True, blank=True)
     last_name = models.CharField(max_length=100, null=True, blank=True)
-    balance = models.FloatField(null=True, blank=True)
+    debt = models.FloatField(null=True, blank=True)
 
 class Snack(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
