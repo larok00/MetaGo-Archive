@@ -1,16 +1,15 @@
-#import face_recognition
+import face_recognition
 import pickle
 import django
 import os
 import pickle
 
-"""
 os.chdir("..")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "MetaGo_website.settings")
 django.setup()
 os.chdir("MetaGo")
+
 from MetaGo.models import Employee
-"""
 
 HOST_KEY="HOST"
 USER_KEY="USER"
@@ -26,12 +25,12 @@ known_images_path = os.path.join(os.getcwd(), "known_images")
 
 class Person:
     def __init__(self, person_id,
-                 #encoding,
+                 encoding,
                  phone, location, first=None, last=None):
         self.person_id=person_id
         self.first=first
         self.last=last
-        #self.encoding=encoding
+        self.encoding=encoding
         self.phone=phone
         self.location=location
 
@@ -41,10 +40,12 @@ class People:
         self.people_list = []
         file = pickle.load(open(filename, "rb"))
         for key, value in file.items():
+            image_path = "faces/" + key + ".jpg"
+            image_data = face_recognition.load_image_file(image_path)
             self.people_list.append(
                 Person(
                     person_id=key,
-                    #encoding,
+                    encoding=face_recognition.face_encodings(image_data)[0],
                     first=value[0],
                     last=value[1],
                     phone=value[2],
