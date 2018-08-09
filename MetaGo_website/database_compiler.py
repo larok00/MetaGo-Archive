@@ -1,10 +1,11 @@
+
+from MetaGo.models import Employee
 import face_recognition
 import pickle
 import os
 import yaml
 
 
-WEB_SERVER_CONFIG="db_config.yml"
 HOST_KEY="HOST"
 USER_KEY="USER"
 PORT_KEY="PORT"
@@ -13,16 +14,9 @@ DATBASE_KEY="DATABASE"
 ID_KEY="ID"
 ENCODING_KEY="ENCODING"
 root_directory=os.getcwd()
-DATABASE_NAME="employee_database.pkl"
 known_images_path = os.path.join(os.getcwd(), "known_images")
 
-with open(WEB_SERVER_CONFIG) as web_config:
-    config = yaml.load(web_config)
-    host=config[HOST_KEY]
-    datbase=config[DATBASE_KEY]
-    user=config[USER_KEY]
-    port=config[PORT_KEY]
-    password=config[PASSWORD_KEY]
+
 
 class Person:
     def __init__(self, person_id, encoding, first=None, last=None):
@@ -56,10 +50,9 @@ def populate_database(known_images):
         person={}
         person[ID_KEY]=known_image[0]
         person[ENCODING_KEY]=face_encoding
+        Employee_info = Employee(person_id=person[ID_KEY], face_encoding=person[ENCODING_KEY])
         known_database.append(person)
-    database=open(DATABASE_NAME, "wb")
-    pickle.dump(known_database, database)
-    database.close()
+    print(person)
 
 if __name__=="__main__":
     known_images=collect_filepaths()
