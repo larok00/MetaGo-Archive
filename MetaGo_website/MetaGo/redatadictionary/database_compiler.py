@@ -1,14 +1,16 @@
-
-import face_recognition
+#import face_recognition
 import pickle
 import django
 import os
+import pickle
 
+"""
 os.chdir("..")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "MetaGo_website.settings")
 django.setup()
 os.chdir("MetaGo")
 from MetaGo.models import Employee
+"""
 
 HOST_KEY="HOST"
 USER_KEY="USER"
@@ -22,18 +24,37 @@ PERSONEL_INFO_FILE_NAME="data_dictionary.pkl"
 known_images_path = os.path.join(os.getcwd(), "known_images")
 
 
-
 class Person:
-    def __init__(self, person_id, encoding, first=None, last=None):
+    def __init__(self, person_id,
+                 #encoding,
+                 phone, location, first=None, last=None):
         self.person_id=person_id
         self.first=first
         self.last=last
-        self.encoding=encoding
+        #self.encoding=encoding
+        self.phone=phone
+        self.location=location
+
 
 class People:
     def __init__(self, filename="myfile.pkl"):
         self.people_list = []
-        for key, value in file.
+        file = pickle.load(open(filename, "rb"))
+        for key, value in file.items():
+            self.people_list.append(
+                Person(
+                    person_id=key,
+                    #encoding,
+                    first=value[0],
+                    last=value[1],
+                    phone=value[2],
+                    location=value[3]
+                )
+            )
+
+ppl = People(filename="selected.pkl")
+for i in ppl.people_list:
+    print(i.person_id)
 
 def load_personel_data():
     return pickle.load(open(PERSONEL_INFO_FILE_NAME))
@@ -49,7 +70,7 @@ def collect_filepaths():
     print("list that will be traversed: ", known_images)
     return known_images
 
-
+"""
 def populate_database(known_images):
     global root_directory
     known_database=[]
@@ -69,16 +90,5 @@ if __name__=="__main__":
     print(load_personel_data)
     known_images=collect_filepaths()
     populate_database(known_images)
-
-
-
-
-
-
-
-
-
-
-
-
+"""
 
