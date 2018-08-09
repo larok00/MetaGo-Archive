@@ -1,0 +1,359 @@
+{% load static %}
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>tracking.js - face with camera</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <link rel="stylesheet" href="{% static 'MetaGo/style.css' %}">
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+
+
+  <script src="{% static 'MetaGo/tracking/build/tracking-min.js' %}"></script>
+  <script src="{% static 'MetaGo/tracking/build/data/face-min.js' %}"></script>
+  <script src="{% static 'MetaGo/quagga.min.js' %}"></script>
+
+
+  <style>
+  video, canvas {
+    margin-left: 230px;
+    margin-top: 120px;
+    position: absolute;
+  }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div id="page-head">
+
+  </div>
+  <div class="interactive-content">
+
+    <div id="page-home" class="page">
+       <div class="text-big">Welcome to the canteen.</div>
+       <button type="button" class="col-8" class="button" id="home-faceid">FaceID</button>
+       <button type="button" class="col-8" class="button" id="home-initials">Use initials</button>
+    </div>
+
+    <div id="page-idcamera" class="page">
+      <div id="cameraframe">
+        <video id="video" width="320" height="240" preload autoplay loop muted></video>
+        <canvas id="canvas" width="320" height="240"></canvas>
+      </div>
+      
+        <button type="button" class="button" class="col-8" id="idcamera-cancel">Cancel</button>
+      
+    </div>
+
+    <div id="page-cameraone" class="page">
+       <span class="text-big" class="col-10">Please confirm you are <b id="found-name"></b>.</span>
+       <button type="button" class="col-8" class="button" class="good" id="cameraone-confirm">That's me!</button>
+       <button type="button" class="col-8" class="button" class="bad" id="cameraone-deny">Nope.</button>
+    </div>
+
+    <div id="page-cameramany" class="page">
+       <div class="text-big">Who are you?<b id="found-name"></b>.</div>
+       <div id="cameramany-possibles"></div>
+       <button type="button" class="col-8" class="button" id="cameramany-none">None of these :(</button>
+    </div>    
+
+    <div id="page-camerafail" class="page">
+       <div class="text-big">FaceID failed.</div>
+       <button type="button" class="col-8" class="button" id="camerafail-retry">Retry</button>
+       <button type="button" class="col-8" class="button" id="camerafail-initials">Use initials</button>
+    </div>
+
+    <div id="page-initials" class="page">
+      <div class="text-small">Please enter your initials.</div>
+      <input type="text" id="initials-text">
+      <button type="button" class="col-8" class="button" id="camerafail-initials">Go</button>
+    </div>
+
+    <div id="page-initialsfail" class="page">
+      <div class="text-small">Initials not recognised.</div>
+      <button type="button" class="col-8" class="button" id="initialsfail-retry">Retry</button>
+      <button type="button" class="col-8" class="button" id="initialsfail-cancel">Cancel</button>
+    </div>
+
+    <div id="page-barcode" class="page">
+      <div id="scanner-container"></div>
+      <button type="button" class="col-8" class="button" id="barcode-manual">Select manually.</button>
+      <button type="button" class="col-8" class="button" id="barcode-cancel">Cancel</button>
+    </div>
+
+
+  </div>
+  
+  
+  <div id="output">
+  </div>
+
+  </div>
+
+  <script>
+    $(function() {
+      //Page setup
+
+
+      //Var setup
+      var basket = new Array();
+      var customer;
+
+      var goHome = function() {
+        $(".page").hide();
+        $("#page-home").show();
+        customer = null;
+        $("#home-faceid").click(function(){
+          goFaceid();
+        });
+        $("#home-initials").click(function(){
+          goInitials();
+        });
+      }
+
+      var goFaceid = function() {
+        var scale = 0.25;
+        var photoSent = false;
+
+        $(".page").hide();
+        $("#page-idcamera").show();
+
+        $("#idcamera-cancel").click(function(){
+          setTimeout(function () { trackerTask.stop(); video.pause(); video.srcObject.getVideoTracks()[0].stop(); }, 1);
+          goHome();
+        });
+
+        var video = document.getElementById('video');
+        var canvas = document.getElementById('canvas');
+        var context = canvas.getContext('2d');
+      
+        var tracker = new tracking.ObjectTracker('face');
+        tracker.setInitialScale(4);
+        tracker.setStepSize(2);
+        tracker.setEdgesDensity(0.1);
+       
+        tracker.on('track', function(event) {
+          context.clearRect(0, 0, canvas.width , canvas.height);
+
+          event.data.forEach(function(rect) {
+
+            if (photoSent){
+              ignoreThisRun = true;
+            }
+            else{
+              ignoreThisRun = false;
+            }
+            photoSent = true;
+
+            if (!ignoreThisRun){
+              var canvasCapture = document.createElement("canvas");
+              canvasCapture.width = video.videoWidth * scale;
+              canvasCapture.height = video.videoHeight * scale;
+              canvasCapture.getContext('2d')
+                    .drawImage(video, 0, 0, canvas.width, canvas.height);
+       
+              var img = document.createElement("img");
+              dataURL = canvas.toDataURL();
+          
+              setTimeout(function () { trackerTask.stop(); video.pause(); video.srcObject.getVideoTracks()[0].stop(); }, 1);
+
+              img.src = dataURL;
+              document.getElementById("output").prepend(img);
+              
+              $(".demo-container").remove();
+
+              $.ajax({
+                type: "POST",
+                url: "photoid.txt",
+                data: {
+                  img: dataURL
+                }
+              }).done(function(msg) {
+                users = JSON.parse(msg);
+                console.log("Got the following from server:");
+                console.log(users);
+                if (users.length == 0){
+                  goCamerafail();
+                }
+                else if (users.length == 1) {
+                  goCameraone(users);
+                }
+                else {
+                  goCameramany(users);
+                }
+                
+              });            
+            }
+              
+              
+          });
+        });
+
+        trackerTask = tracking.track('#video', tracker, { camera: true });
+      };
+
+      var goCamerafail = function() {
+        $(".page").hide();
+        $("#page-camerafail").show();
+      }
+
+      var goCameraone = function(users) {
+        $(".page").hide();
+        $("#page-cameraone").show();
+        console.log(users)
+        $("#found-name").text(users[0]);
+      }
+
+      var goCameramany = function(users) {
+        $(".page").hide();
+        $("#page-cameramany").show();
+
+        var ii;
+        for (ii = 0; ii < users.length; ii++){
+          console.log("Adding user: "+ users[ii]);
+          $("#cameramany-possibles").append("<button type=\"button\" class=\"col-8 button possibles-button\" id=\"" + users[ii] +"\">"+users[ii]+"</button>");
+        }
+
+        $(".possibles-button").click(function(){
+          customer = this.id;
+          console.log("Logging in customer "+ customer)
+          goBarcode(customer);
+        });
+        $("#cameramany-none").click(function(){
+          goInitials();
+        });
+        };
+
+      var goBarcode = function(){
+        $(".page").hide();
+        $("#page-barcode").show();
+        startScanner(); 
+        $("#barcode-manual").click(function(){
+          Quagga.stop();
+          goSelectmanual();
+        });
+        $("#barcode-cancel").click(function(){
+          Quagga.stop();
+          goHome();
+        });
+      }
+
+        function startScanner() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#scanner-container'),
+                    constraints: {
+                        width: 480,
+                        height: 320,
+                        facingMode: "environment"
+                    },
+                },
+                decoder: {
+                    readers: [
+                        "code_128_reader",
+                        "ean_reader",
+                        "ean_8_reader",
+                        "code_39_reader",
+                        "code_39_vin_reader",
+                        "codabar_reader",
+                        "upc_reader",
+                        "upc_e_reader",
+                        "i2of5_reader"
+                    ],
+                    debug: {
+                        showCanvas: true,
+                        showPatches: true,
+                        showFoundPatches: true,
+                        showSkeleton: true,
+                        showLabels: true,
+                        showPatchLabels: true,
+                        showRemainingPatchLabels: true,
+                        boxFromPatches: {
+                            showTransformed: true,
+                            showTransformedBox: true,
+                            showBB: true
+                        }
+                    }
+                },
+
+            }, function (err) {
+                if (err) {
+                    console.log(err);
+                    return
+                }
+
+                console.log("Initialization finished. Ready to start");
+                Quagga.start();
+
+            });
+
+            Quagga.onProcessed(function (result) {
+                var drawingCtx = Quagga.canvas.ctx.overlay,
+                drawingCanvas = Quagga.canvas.dom.overlay;
+
+                if (result) {
+                    if (result.boxes) {
+                        drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                        result.boxes.filter(function (box) {
+                            return box !== result.box;
+                        }).forEach(function (box) {
+                            Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                        });
+                    }
+
+                    if (result.box) {
+                        Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+                    }
+
+                    if (result.codeResult && result.codeResult.code) {
+                        Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                    }
+                }
+            });
+
+
+            Quagga.onDetected(function (result) {
+                console.log("Barcode detected and processed : [" + result.codeResult.code + "]", result);
+                Quagga.stop();
+                $.ajax({
+                  type: "POST",
+                  url: "barcode.txt",
+                  data: {
+                    barcode: result.codeResult.code
+                  }
+                }).done(function(msg) {
+                  product = JSON.parse(msg);
+                  if (product.failed == 1){
+                    console.log('lookup failed')
+                    goBarcodefailed()
+                  }
+                  else {
+                    basket.push(product);
+                  }
+
+                });
+
+            });
+        }
+
+      goHome();
+
+
+      
+	  
+	 
+   
+		
+    //JS END -required })
+    })
+      //var trackerClearer = setInterval(function(){if (snapshotTaken = true){tracker.stop()}},1000);
+
+  </script>
+
+</body>
+</html>
