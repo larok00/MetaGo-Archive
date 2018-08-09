@@ -97,11 +97,13 @@
 
 
       //Var setup
-
+      var basket = new Array();
+      var customer;
 
       var goHome = function() {
         $(".page").hide();
         $("#page-home").show();
+        customer = null;
         $("#home-faceid").click(function(){
           goFaceid();
         });
@@ -165,7 +167,7 @@
                 type: "POST",
                 url: "photoid.txt",
                 data: {
-                  imgBase64: dataURL
+                  img: dataURL
                 }
               }).done(function(msg) {
                 users = JSON.parse(msg);
@@ -223,10 +225,18 @@
         });
         };
 
-      var goBarcode = function(customer){
+      var goBarcode = function(){
         $(".page").hide();
-        $("#page-barcode").show(); 
+        $("#page-barcode").show();
         startScanner(); 
+        $("#barcode-manual").click(function(){
+          Quagga.stop();
+          goSelectmanual();
+        });
+        $("#barcode-cancel").click(function(){
+          Quagga.stop();
+          goHome();
+        });
       }
 
         function startScanner() {
@@ -308,6 +318,24 @@
             Quagga.onDetected(function (result) {
                 console.log("Barcode detected and processed : [" + result.codeResult.code + "]", result);
                 Quagga.stop();
+                $.ajax({
+                  type: "POST",
+                  url: "barcode.txt",
+                  data: {
+                    barcode: result.codeResult.code
+                  }
+                }).done(function(msg) {
+                  product = JSON.parse(msg);
+                  if (product.failed == 1){
+                    console.log('lookup failed')
+                    goBarcodefailed()
+                  }
+                  else {
+                    basket.push(product);
+                  }
+
+                });
+
             });
         }
 
