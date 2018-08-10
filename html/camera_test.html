@@ -16,9 +16,11 @@
 
   <style>
   video, canvas {
-    margin-left: 230px;
-    margin-top: 120px;
-    position: absolute;
+
+    
+    display: inline-block;
+    width: 80%;
+    margin: 30pt;
   }
   </style>
 </head>
@@ -26,7 +28,7 @@
 
 <div class="container">
   <div id="page-head">
-
+    <img src="metagologo1.png" width="100%"/>
   </div>
   <div class="interactive-content">
 
@@ -37,9 +39,9 @@
     </div>
 
     <div id="page-idcamera" class="page">
-      <div id="cameraframe">
-        <video id="video" width="320" height="240" preload autoplay loop muted></video>
-        <canvas id="canvas" width="320" height="240"></canvas>
+      <div id="cameraframe" class="row">
+        <video id="video" wiidth="320" heiight="240" preload autoplay loop muted></video>
+        <canvas id="canvas" wiidth="320" heiight="240"></canvas>
       </div>
       
         <button type="button" class="button" class="col-12" id="idcamera-cancel">Cancel</button>
@@ -78,8 +80,14 @@
 
     <div id="page-barcode" class="page">
       <div id="scanner-container"></div>
-      <button type="button" class="col-12" class="button" id="barcode-manual">Select manually.</button>
+      <button type="button" class="col-12" class="button" id="barcode-manual">Select manually</button>
       <button type="button" class="col-12" class="button" id="barcode-cancel">Cancel</button>
+    </div>
+
+    <div id="page-manual" class="page">
+      <div class="text-big">Please select:</div>
+      <div id="manual-options"></div>
+      <button type="button" class="col-12" class="button" id="manual-cancel">Cancel</button>      
     </div>
 
     <div id="page-basket" class="page">
@@ -107,7 +115,7 @@
   <script>
     $(function() {
       //Page setup
-
+      var quaggaSent = false;
 
       //Var setup
       var basket = new Array();
@@ -119,12 +127,7 @@
         $(".page").hide();
         $("#page-home").show();
         customer = null;
-        $("#home-faceid").click(function(){
-          goFaceid();
-        });
-        $("#home-initials").click(function(){
-          goInitials();
-        });
+ 
       }
 
       var goFaceid = function() {
@@ -134,10 +137,9 @@
         $(".page").hide();
         $("#page-idcamera").show();
 
-        $("#idcamera-cancel").click(function(){
-          setTimeout(function () { trackerTask.stop(); video.pause(); video.srcObject.getVideoTracks()[0].stop(); }, 1);
-          goHome();
-        });
+
+
+        $("#capture-canvas").remove();
 
         var video = document.getElementById('video');
         var canvas = document.getElementById('canvas');
@@ -163,6 +165,7 @@
 
             if (!ignoreThisRun){
               var canvasCapture = document.createElement("canvas");
+              canvasCapture.id = "capture-canvas"
               canvasCapture.width = video.videoWidth * scale;
               canvasCapture.height = video.videoHeight * scale;
               canvasCapture.getContext('2d')
@@ -174,7 +177,7 @@
               setTimeout(function () { trackerTask.stop(); video.pause(); video.srcObject.getVideoTracks()[0].stop(); }, 1);
 
               img.src = dataURL;
-              document.getElementById("output").prepend(img);
+              //document.getElementById("output").prepend(img);
               
               $(".demo-container").remove();
 
@@ -245,24 +248,7 @@
         $(".page").hide();
         $("#page-initials").show();
 
-        $("#initials-go").click(function(){
-          var initials = $("#initials-text").val();
-          initials = initials.toUpperCase()
-          $.ajax({
-            data: { initials: initials},
-            type: "POST",
-            url: "verifyid.txt",
-          }).done(function(msg){
-            if (msg == "TRUE") {
-              customer = initials;
-              goBarcode();
-            }
-            else {
-              goInitialsfail();
-            }
-          })
 
-        })
       }
 
       var goInitialsfail = function(){
@@ -285,28 +271,48 @@
         $(".page").hide();
         $("#page-barcode").show();
         startScanner(); 
-        $("#barcode-manual").click(function(){
-          Quagga.stop();
-          quaggaRunning = false;
-          goSelectmanual();
+        
+      }
+
+      var goSelectmanual = function(){
+        Quagga.stop();
+        console.log("select manual")
+        $(".page").hide();
+        $("#page-manual").show();
+
+        $.ajax({
+          type: "POST",
+          url: "products.txt",
+        }).done(function(msg) {
+          products = JSON.parse(msg);
+          var ii;
+          console.log("This many products: " + products.length)
+          $("#manual-options").empty();
+          for (ii=0; ii<products.length; ii++){
+            $("#manual-options").append("<button type=\"button\" class=\"col-6 button manual-option\" id=\"add-"+ii+"\">" + products[ii].productname + "</button>");
+          }
+        
+        $(".manual-option").click(function(){
+          console.log("adding this id: " + this.id);
+          id = parseInt(this.id.substr(4));
+          basket.push(products[id])
+          console.log("New basket: " + basket);
+          goBasket();
         });
-        $("#barcode-cancel").click(function(){
-          Quagga.stop();
-          quaggaRunning = false;
-          goHome();
         });
       }
+
 
       var goBasket = function(){
         $(".page").hide();
         $("#basket-contents").html("");
         $("#page-basket").show();
-
+        Quagga.stop();
 
         total = 0.0;
         var ii;
         for (ii=0; ii<basket.length; ii++){
-          $("#basket-contents").append("<div class=\"row\"><div class=\"basket-text col-8\">" + basket[ii].productname + " - £" + basket[ii].price + "</div><button type=\"button\" class=\"col-4 button basket-delete\" id=\"del-"+ii+"\">Remove</button>");
+          $("#basket-contents").append("<div class=\"row\"><div class=\"basket-text col-8\">" + basket[ii].productname + " - £" + basket[ii].price.toFixed(2) + "</div><button type=\"button\" class=\"col-4 button basket-delete\" id=\"del-"+ii+"\">Remove</button>");
           total = total + basket[ii].price;
         }
 
@@ -327,7 +333,9 @@
         $("#page-done").show();
         $("#done-next").click(function(){location.reload()})
       }
+
         function startScanner() {
+            quaggaSent = false;
             if (quaggaRunning){
 
             }
@@ -410,6 +418,12 @@
 
 
               Quagga.onDetected(function (result) {
+                  if (quaggaSent){}
+                  else {
+                    quaggaSent = true;
+                  
+
+
                   console.log("Barcode detected and processed : [" + result.codeResult.code + "]", result);
                   Quagga.stop();
                   quaggaRunning = false;
@@ -430,6 +444,7 @@
                       goBasket();
                     }
                   });
+                }
               });
           }
         }
@@ -459,12 +474,49 @@
             setTimeout(function(){location.reload()}, 3000)
             goDone();
           })
-        })
+        });
+        $("#barcode-manual").click(function(){
+          Quagga.stop();
+          quaggaRunning = false;
+          goSelectmanual();
+        });
+        $("#barcode-cancel").click(function(){
+          Quagga.stop();
+          quaggaRunning = false;
+          goHome();
+        });
 
+        $("#idcamera-cancel").click(function(){
+          setTimeout(function () { trackerTask.stop(); video.pause(); video.srcObject.getVideoTracks()[0].stop(); }, 1);
+          goHome();
+        });
       goHome();
 
+       $("#home-faceid").click(function(){
+          goFaceid();
+        });
+        $("#home-initials").click(function(){
+          goInitials();
+        });
 
-      
+        $("#initials-go").click(function(){
+          var initials = $("#initials-text").val();
+          initials = initials.toUpperCase()
+          $.ajax({
+            data: { initials: initials},
+            type: "POST",
+            url: "verifyid.txt",
+          }).done(function(msg){
+            if (msg == "TRUE") {
+              customer = initials;
+              goBarcode();
+            }
+            else {
+              goInitialsfail();
+            }
+          })
+
+        })
 	  
 	 
    
